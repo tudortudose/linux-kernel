@@ -1076,6 +1076,7 @@ static const struct nla_policy nl80211_policy[NUM_NL80211_ATTR] = {
 	[NL80211_ATTR_NAN_MAX_CHAN_SWITCH_TIME] = { .type = NLA_U16 },
 	[NL80211_ATTR_NAN_PEER_MAPS] =
 		NLA_POLICY_NESTED_ARRAY(nl80211_nan_peer_map_policy),
+	[NL80211_ATTR_FRAME_PADDING] = { .type = NLA_FLAG },
 };
 
 /* policy for the key attributes */
@@ -4884,6 +4885,12 @@ static int nl80211_set_interface(struct sk_buff *skb, struct genl_info *info)
 			return err;
 	} else {
 		params.use_4addr = -1;
+	}
+
+	if (info->attrs[NL80211_ATTR_FRAME_PADDING]) {
+		params.frame_padding =
+			nla_get_flag(info->attrs[NL80211_ATTR_FRAME_PADDING]);
+		change = true;
 	}
 
 	err = nl80211_parse_mon_options(rdev, ntype, info, &params);

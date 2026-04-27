@@ -949,6 +949,45 @@ static int ieee80211_fragment(struct ieee80211_tx_data *tx,
 }
 
 static ieee80211_tx_result debug_noinline
+ieee80211_tx_h_frame_padding(struct ieee80211_tx_data *tx)
+{
+	struct sk_buff *skb = tx->skb;
+	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
+	unsigned int hdrlen, payload_len, pad_len;
+	int tail_need;
+
+	if (!tx->sdata->frame_padding)
+		return TX_CONTINUE;
+
+	if (!ieee80211_is_data(hdr->frame_control))
+		return TX_CONTINUE;
+
+	/* don't pad null data frames */
+	if (!ieee80211_is_data_present(hdr->frame_control))
+		return TX_CONTINUE;
+
+	hdrlen = ieee80211_hdrlen(hdr->frame_control);
+	if (skb->len <= hdrlen)
+		return TX_CONTINUE;
+
+	payload_len = skb->len - hdrlen;
+	if (payload_len >= IEEE80211_MAX_DATA_LEN)
+		return TX_CONTINUE;
+
+	pad_len = IEEE80211_MAX_DATA_LEN - payload_len;
+
+	tail_need = pad_len - skb_tailroom(skb);
+	if (tail_need > 0) {
+		if (pskb_expand_head(skb, 0, tail_need, GFP_ATOMIC))
+			return TX_DROP;
+	}
+
+	memset(skb_put(skb, pad_len), 0, pad_len);
+
+	return TX_CONTINUE;
+}
+
+static ieee80211_tx_result debug_noinline
 ieee80211_tx_h_fragment(struct ieee80211_tx_data *tx)
 {
 	struct sk_buff *skb = tx->skb;
@@ -1866,6 +1905,7 @@ static int invoke_tx_handlers_late(struct ieee80211_tx_data *tx)
 
 	CALL_TXH(ieee80211_tx_h_michael_mic_add);
 	CALL_TXH(ieee80211_tx_h_sequence);
+	CALL_TXH(ieee80211_tx_h_frame_padding);
 	CALL_TXH(ieee80211_tx_h_fragment);
 	/* handlers after fragment must be aware of tx info fragmentation! */
 	CALL_TXH(ieee80211_tx_h_stats);
@@ -3760,6 +3800,22 @@ void __ieee80211_xmit_fast(struct ieee80211_sub_if_data *sdata,
 		u8 tid = skb->priority & IEEE80211_QOS_CTL_TAG1D_MASK;
 
 		*ieee80211_get_qos_ctl(hdr) = tid;
+	}
+
+	/* Apply frame padding for traffic analysis resistance */
+	if (sdata->frame_padding) {
+		unsigned int hdrlen = fast_tx->hdr_len;
+		unsigned int payload_len = skb->len - hdrlen;
+
+		if (payload_len < IEEE80211_MAX_DATA_LEN) {
+			unsigned int pad_len = IEEE80211_MAX_DATA_LEN - payload_len;
+			int tail_need = pad_len - skb_tailroom(skb);
+
+			if (tail_need > 0 &&
+			    pskb_expand_head(skb, 0, tail_need, GFP_ATOMIC))
+				goto free;
+			memset(skb_put(skb, pad_len), 0, pad_len);
+		}
 	}
 
 	__skb_queue_head_init(&tx.skbs);

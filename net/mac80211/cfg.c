@@ -294,6 +294,9 @@ static int ieee80211_change_iface(struct wiphy *wiphy,
 			ieee80211_send_4addr_nullfunc(local, sdata);
 	}
 
+	if (params->frame_padding != sdata->frame_padding)
+		sdata->frame_padding = params->frame_padding;
+
 	if (sdata->vif.type == NL80211_IFTYPE_MONITOR) {
 		ret = ieee80211_set_mon_options(sdata, params);
 		if (ret)

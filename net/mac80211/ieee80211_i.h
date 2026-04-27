@@ -1168,6 +1168,9 @@ struct ieee80211_sub_if_data {
 	/* bit field of ACM bits (BIT(802.1D tag)) */
 	u8 wmm_acm;
 
+	/* pad data frames to IEEE80211_MAX_DATA_LEN for traffic analysis resistance */
+	bool frame_padding;
+
 	struct ieee80211_key __rcu *keys[NUM_DEFAULT_KEYS];
 	struct ieee80211_key __rcu *default_unicast_key;
 
