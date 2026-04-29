@@ -3808,7 +3808,7 @@ void __ieee80211_xmit_fast(struct ieee80211_sub_if_data *sdata,
 
 	/* Apply frame padding for traffic analysis resistance */
 	if (sdata->frame_padding_enabled) {
-		unsigned int hdrlen = fast_tx->hdr_len;
+		unsigned int hdrlen = ieee80211_hdrlen(hdr->frame_control);
 		unsigned int payload_len = skb->len - hdrlen;
 		unsigned int target_len = sdata->frame_padding_size;
 
