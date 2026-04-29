@@ -1076,7 +1076,9 @@ static const struct nla_policy nl80211_policy[NUM_NL80211_ATTR] = {
 	[NL80211_ATTR_NAN_MAX_CHAN_SWITCH_TIME] = { .type = NLA_U16 },
 	[NL80211_ATTR_NAN_PEER_MAPS] =
 		NLA_POLICY_NESTED_ARRAY(nl80211_nan_peer_map_policy),
-	[NL80211_ATTR_FRAME_PADDING] = { .type = NLA_FLAG },
+	[NL80211_ATTR_FRAME_PADDING_ENABLED] = { .type = NLA_FLAG },
+	[NL80211_ATTR_FRAME_PADDING_SIZE] =
+		NLA_POLICY_MAX(NLA_U32, IEEE80211_MAX_DATA_LEN),
 };
 
 /* policy for the key attributes */
@@ -4887,9 +4889,16 @@ static int nl80211_set_interface(struct sk_buff *skb, struct genl_info *info)
 		params.use_4addr = -1;
 	}
 
-	if (info->attrs[NL80211_ATTR_FRAME_PADDING]) {
-		params.frame_padding =
-			nla_get_flag(info->attrs[NL80211_ATTR_FRAME_PADDING]);
+	params.frame_padding_enabled = -1;
+	params.frame_padding_size = -1;
+	if (info->attrs[NL80211_ATTR_FRAME_PADDING_ENABLED]) {
+		params.frame_padding_enabled =
+			nla_get_flag(info->attrs[NL80211_ATTR_FRAME_PADDING_ENABLED]);
+		change = true;
+	}
+	if (info->attrs[NL80211_ATTR_FRAME_PADDING_SIZE]) {
+		params.frame_padding_size =
+			nla_get_u32(info->attrs[NL80211_ATTR_FRAME_PADDING_SIZE]);
 		change = true;
 	}
 
@@ -4933,6 +4942,8 @@ static int _nl80211_new_interface(struct sk_buff *skb, struct genl_info *info)
 	enum nl80211_iftype type = NL80211_IFTYPE_UNSPECIFIED;
 
 	memset(&params, 0, sizeof(params));
+	params.frame_padding_enabled = -1;
+	params.frame_padding_size = -1;
 
 	if (!info->attrs[NL80211_ATTR_IFNAME])
 		return -EINVAL;

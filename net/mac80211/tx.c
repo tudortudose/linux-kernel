@@ -953,11 +953,15 @@ ieee80211_tx_h_frame_padding(struct ieee80211_tx_data *tx)
 {
 	struct sk_buff *skb = tx->skb;
 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
-	unsigned int hdrlen, payload_len, pad_len;
+	unsigned int hdrlen, payload_len, pad_len, target_len;
 	int tail_need;
 
-	if (!tx->sdata->frame_padding)
+	if (!tx->sdata->frame_padding_enabled)
 		return TX_CONTINUE;
+
+	target_len = tx->sdata->frame_padding_size;
+	if (!target_len || target_len > IEEE80211_MAX_DATA_LEN)
+		target_len = IEEE80211_MAX_DATA_LEN;
 
 	if (!ieee80211_is_data(hdr->frame_control))
 		return TX_CONTINUE;
@@ -971,10 +975,10 @@ ieee80211_tx_h_frame_padding(struct ieee80211_tx_data *tx)
 		return TX_CONTINUE;
 
 	payload_len = skb->len - hdrlen;
-	if (payload_len >= IEEE80211_MAX_DATA_LEN)
+	if (payload_len >= target_len)
 		return TX_CONTINUE;
 
-	pad_len = IEEE80211_MAX_DATA_LEN - payload_len;
+	pad_len = target_len - payload_len;
 
 	tail_need = pad_len - skb_tailroom(skb);
 	if (tail_need > 0) {
@@ -3803,12 +3807,16 @@ void __ieee80211_xmit_fast(struct ieee80211_sub_if_data *sdata,
 	}
 
 	/* Apply frame padding for traffic analysis resistance */
-	if (sdata->frame_padding) {
+	if (sdata->frame_padding_enabled) {
 		unsigned int hdrlen = fast_tx->hdr_len;
 		unsigned int payload_len = skb->len - hdrlen;
+		unsigned int target_len = sdata->frame_padding_size;
 
-		if (payload_len < IEEE80211_MAX_DATA_LEN) {
-			unsigned int pad_len = IEEE80211_MAX_DATA_LEN - payload_len;
+		if (!target_len || target_len > IEEE80211_MAX_DATA_LEN)
+			target_len = IEEE80211_MAX_DATA_LEN;
+
+		if (payload_len < target_len) {
+			unsigned int pad_len = target_len - payload_len;
 			int tail_need = pad_len - skb_tailroom(skb);
 
 			if (tail_need > 0 &&

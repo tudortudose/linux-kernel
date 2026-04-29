@@ -815,7 +815,8 @@ struct vif_params {
 	u8 macaddr[ETH_ALEN];
 	const u8 *vht_mumimo_groups;
 	const u8 *vht_mumimo_follow_addr;
-	bool frame_padding;
+	int frame_padding_enabled;
+	int frame_padding_size;
 };
 
 /**
