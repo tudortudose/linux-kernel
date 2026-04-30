@@ -1923,6 +1923,14 @@ static void ieee80211_setup_sdata(struct ieee80211_sub_if_data *sdata,
 	sdata->vif.cfg.idle = true;
 	sdata->vif.bss_conf.txpower = INT_MIN; /* unset */
 
+	/* Seed per-vif frame padding from the module-wide defaults. The
+	 * per-vif values can still be overridden later via nl80211.
+	 */
+	sdata->frame_padding_enabled =
+		READ_ONCE(ieee80211_frame_padding_default_enabled);
+	sdata->frame_padding_size =
+		READ_ONCE(ieee80211_frame_padding_default_size);
+
 	sdata->noack_map = 0;
 
 	/* only monitor/p2p-device differ */

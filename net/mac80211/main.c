@@ -1828,5 +1828,18 @@ static void __exit ieee80211_exit(void)
 subsys_initcall(ieee80211_init);
 module_exit(ieee80211_exit);
 
+bool ieee80211_frame_padding_default_enabled __read_mostly;
+module_param_named(frame_padding_default_enabled,
+		   ieee80211_frame_padding_default_enabled, bool, 0644);
+MODULE_PARM_DESC(frame_padding_default_enabled,
+	"Default for per-vif frame padding on newly created interfaces (0/1)");
+
+unsigned int ieee80211_frame_padding_default_size __read_mostly;
+module_param_named(frame_padding_default_size,
+		   ieee80211_frame_padding_default_size, uint, 0644);
+MODULE_PARM_DESC(frame_padding_default_size,
+	"Default MSDU pad size in bytes for newly created interfaces "
+	"(0 = use IEEE80211_MAX_DATA_LEN)");
+
 MODULE_DESCRIPTION("IEEE 802.11 subsystem");
 MODULE_LICENSE("GPL");

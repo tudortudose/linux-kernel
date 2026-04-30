@@ -82,6 +82,10 @@ struct ieee80211_mesh_fast_tx;
 
 extern const u8 ieee80211_ac_to_qos_mask[IEEE80211_NUM_ACS];
 
+/* Module-wide defaults applied to newly created vifs (see main.c). */
+extern bool ieee80211_frame_padding_default_enabled;
+extern unsigned int ieee80211_frame_padding_default_size;
+
 #define IEEE80211_DEAUTH_FRAME_LEN	(24 /* hdr */ + 2 /* reason */)
 
 #define IEEE80211_MAX_NAN_INSTANCE_ID 255
